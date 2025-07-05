@@ -10,7 +10,7 @@ CLANG="neutron"
 TC_BRANCH="18"
 TC_DIR="$HOME/courbet/clang-$CLANG"
 
-AK3_URL="https://github.com/meloalfa159/AnyKernel3.git"
+AK3_URL="https://github.com/pratikkabra143/AnyKernel3.git"
 AK3_BRANCH="master"
 AK3_DIR="$HOME/courbet/anykernel"
 
@@ -31,7 +31,7 @@ fi
 # Setup environment
 DEFCONFIG="courbet_defconfig"
 SECONDS=0 # builtin bash timer
-ZIPNAME="AlfaKernel-melo159-$(git describe --abbrev=0 --tags)-$(date '+%Y%m%d-%H%M').zip"
+ZIPNAME="insanebuilds-pratikkabra143-$(git describe --abbrev=0 --tags)-$(date '+%Y%m%d-%H%M').zip"
 export PROC="-j8"
 
 # Setup ccache environment

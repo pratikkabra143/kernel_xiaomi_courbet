@@ -20,9 +20,9 @@ fi
 ZIPNAME="${DEVICE}-$(date '+%Y%m%d-%H%M').zip"
 
 export ARCH=arm64
-export KBUILD_BUILD_USER=aryan
-export KBUILD_BUILD_HOST=celeste
-export PATH="/home/celeste/aryan/linux-x86/clang-r510928/bin/:$PATH"
+export KBUILD_BUILD_USER=pratikkabra143
+export KBUILD_BUILD_HOST=pratik
+export PATH="/home/pratik/linux-x86/clang-r510928/bin/:$PATH"
 
 if [[ $1 = "-c" || $1 = "--clean" ]]; then
 	rm -rf out
