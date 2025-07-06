@@ -31,7 +31,7 @@ fi
 # Setup environment
 DEFCONFIG="courbet_defconfig"
 SECONDS=0 # builtin bash timer
-ZIPNAME="insanebuilds-pratikkabra143-$(git describe --abbrev=0 --tags)-$(date '+%Y%m%d-%H%M').zip"
+ZIPNAME="insanebuilds-$(git describe --abbrev=0 --tags)-$(date '+%Y%m%d-%H%M').zip"
 export PROC="-j8"
 
 # Setup ccache environment
