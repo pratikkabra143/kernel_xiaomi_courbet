@@ -11,7 +11,7 @@ config KSU_KPROBES_HOOK
 	bool "Use kprobes for kernelsu"
 	depends on KSU
 	depends on KPROBES
-	default n
+	default y
 	help
 	  Disable if you use manual hooks.
 
@@ -175,7 +175,7 @@ config KSU_SUSFS_SUS_SU
 config KSU_LSM_SECURITY_HOOKS
 	bool "use lsm security hooks"
         depends on KSU
-        default n
+        default y
 	help
 	  Disabling this is mostly only useful for kernel 4.1 and older.
 	  Make sure to implement manual hooks on security/security.c.
