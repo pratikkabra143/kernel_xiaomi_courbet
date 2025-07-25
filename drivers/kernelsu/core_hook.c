@@ -354,7 +354,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 
 	if (!from_root && !from_manager) {
 		// only root or manager can access this interface
-		return 0
+		return 0;
 	}
 
 #ifdef CONFIG_KSU_DEBUG
