@@ -1043,7 +1043,7 @@ static int ksu_umount_mnt(struct path *path, int flags)
 #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
 void ksu_try_umount(const char *mnt, bool check_mnt, int flags, uid_t uid)
 #else
-static void try_umount(const char *mnt, bool check_mnt, int flags)
+static void ksu_try_umount(const char *mnt, bool check_mnt, int flags)
 #endif
 {
 	struct path path;
