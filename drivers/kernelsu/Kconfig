@@ -1,3 +1,5 @@
+menu "KernelSU"
+
 config KSU
 	tristate "KernelSU function support"
 	depends on OVERLAY_FS
