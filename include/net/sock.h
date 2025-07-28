@@ -67,7 +67,6 @@
 
 #include <linux/atomic.h>
 #include <linux/refcount.h>
-#include <linux/llist.h>
 #include <net/dst.h>
 #include <net/checksum.h>
 #include <net/tcp_states.h>
@@ -372,7 +371,6 @@ struct sock {
 		struct sk_buff	*head;
 		struct sk_buff	*tail;
 	} sk_backlog;
-        struct llist_head defer_list;
 #define sk_rmem_alloc sk_backlog.rmem_alloc
 
 	int			sk_forward_alloc;
@@ -1481,8 +1479,10 @@ do {									\
 } while (0)
 
 #ifdef CONFIG_LOCKDEP
-static inline bool lockdep_sock_is_held(const struct sock *sk)
+static inline bool lockdep_sock_is_held(const struct sock *csk)
 {
+	struct sock *sk = (struct sock *)csk;
+
 	return lockdep_is_held(&sk->sk_lock) ||
 	       lockdep_is_held(&sk->sk_lock.slock);
 }
@@ -2492,9 +2492,6 @@ extern int sysctl_optmem_max;
 
 extern __u32 sysctl_wmem_default;
 extern __u32 sysctl_rmem_default;
-
-/* On 32bit arches, an skb frag is limited to 2^15 */
-#define SKB_FRAG_PAGE_ORDER     get_order(32768)
 
 /* Default TCP Small queue budget is ~1 ms of data (1sec >> 10)
  * Some wifi drivers need to tweak it to get more chunks.

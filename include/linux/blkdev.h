@@ -582,7 +582,7 @@ struct request_queue {
 	unsigned int		sg_reserved_size;
 	int			node;
 #ifdef CONFIG_BLK_DEV_IO_TRACE
-	struct blk_trace __rcu	*blk_trace;
+	struct blk_trace	*blk_trace;
 	struct mutex		blk_trace_mutex;
 #endif
 	/*
@@ -1777,33 +1777,42 @@ int kblockd_schedule_delayed_work_on(int cpu, struct delayed_work *dwork, unsign
 int kblockd_mod_delayed_work_on(int cpu, struct delayed_work *dwork, unsigned long delay);
 
 #ifdef CONFIG_BLK_CGROUP
+/*
+ * This should not be using sched_clock(). A real patch is in progress
+ * to fix this up, until that is in place we need to disable preemption
+ * around sched_clock() in this function and set_io_start_time_ns().
+ */
 static inline void set_start_time_ns(struct request *req)
 {
-	req->start_time_ns = ktime_get_ns();
+	preempt_disable();
+	req->start_time_ns = sched_clock();
+	preempt_enable();
 }
 
 static inline void set_io_start_time_ns(struct request *req)
 {
-	req->io_start_time_ns = ktime_get_ns();
+	preempt_disable();
+	req->io_start_time_ns = sched_clock();
+	preempt_enable();
 }
 
-static inline u64 rq_start_time_ns(struct request *req)
+static inline uint64_t rq_start_time_ns(struct request *req)
 {
         return req->start_time_ns;
 }
 
-static inline u64 rq_io_start_time_ns(struct request *req)
+static inline uint64_t rq_io_start_time_ns(struct request *req)
 {
         return req->io_start_time_ns;
 }
 #else
 static inline void set_start_time_ns(struct request *req) {}
 static inline void set_io_start_time_ns(struct request *req) {}
-static inline u64 rq_start_time_ns(struct request *req)
+static inline uint64_t rq_start_time_ns(struct request *req)
 {
 	return 0;
 }
-static inline u64 rq_io_start_time_ns(struct request *req)
+static inline uint64_t rq_io_start_time_ns(struct request *req)
 {
 	return 0;
 }

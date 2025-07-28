@@ -17,11 +17,6 @@ KCOV_INSTRUMENT_list_debug.o := n
 KCOV_INSTRUMENT_debugobjects.o := n
 KCOV_INSTRUMENT_dynamic_debug.o := n
 
-# string.o implements standard library functions like memset/memcpy etc.
-# Use -ffreestanding to ensure that the compiler does not try to "optimize"
-# them into calls to themselves.
-CFLAGS_string.o := -ffreestanding
-
 # Early boot use of cmdline, don't instrument it
 ifdef CONFIG_AMD_MEM_ENCRYPT
 KASAN_SANITIZE_string.o := n
@@ -30,7 +25,7 @@ ifdef CONFIG_FUNCTION_TRACER
 CFLAGS_REMOVE_string.o = -pg
 endif
 
-CFLAGS_string.o += $(call cc-option, -fno-stack-protector)
+CFLAGS_string.o := $(call cc-option, -fno-stack-protector)
 endif
 
 lib-y := ctype.o string.o vsprintf.o cmdline.o \
@@ -40,9 +35,8 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
 	 flex_proportions.o ratelimit.o show_mem.o \
 	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
 	 earlycpio.o seq_buf.o siphash.o \
-	 nodemask.o win_minmax.o
+	 nmi_backtrace.o nodemask.o win_minmax.o
 
-lib-$(!CONFIG_ARM64) += nmi_backtrace.o
 lib-$(CONFIG_MMU) += ioremap.o
 lib-$(CONFIG_SMP) += cpumask.o
 lib-$(CONFIG_DMA_NOOP_OPS) += dma-noop.o
@@ -142,8 +136,6 @@ obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
 obj-$(CONFIG_LZ4_COMPRESS) += lz4/
 obj-$(CONFIG_LZ4HC_COMPRESS) += lz4/
 obj-$(CONFIG_LZ4_DECOMPRESS) += lz4/
-obj-$(CONFIG_LZ4KD_COMPRESS) += lz4kd/
-obj-$(CONFIG_LZ4KD_DECOMPRESS) += lz4kd/
 obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
 obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
 obj-$(CONFIG_XZ_DEC) += xz/

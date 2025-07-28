@@ -229,7 +229,7 @@ static int collect_garbage_slots(struct kprobe_insn_cache *c)
 	struct kprobe_insn_page *kip, *next;
 
 	/* Ensure no-one is interrupted on the garbages */
-	synchronize_rcu();
+	synchronize_sched();
 
 	list_for_each_entry_safe(kip, next, &c->pages, list) {
 		int i;
@@ -1821,7 +1821,7 @@ void unregister_kprobes(struct kprobe **kps, int num)
 			kps[i]->addr = NULL;
 	mutex_unlock(&kprobe_mutex);
 
-	synchronize_rcu();
+	synchronize_sched();
 	for (i = 0; i < num; i++)
 		if (kps[i]->addr)
 			__unregister_kprobe_bottom(kps[i]);
@@ -2088,7 +2088,7 @@ void unregister_kretprobes(struct kretprobe **rps, int num)
 			rps[i]->kp.addr = NULL;
 	mutex_unlock(&kprobe_mutex);
 
-	synchronize_rcu();
+	synchronize_sched();
 	for (i = 0; i < num; i++) {
 		if (rps[i]->kp.addr) {
 			__unregister_kprobe_bottom(&rps[i]->kp);
@@ -2477,7 +2477,7 @@ static int kprobe_blacklist_seq_show(struct seq_file *m, void *v)
 	struct kprobe_blacklist_entry *ent =
 		list_entry(v, struct kprobe_blacklist_entry, list);
 
-	seq_printf(m, "0x%p-0x%p\t%ps\n", (void *)ent->start_addr,
+	seq_printf(m, "0x%px-0x%px\t%ps\n", (void *)ent->start_addr,
 		   (void *)ent->end_addr, (void *)ent->start_addr);
 	return 0;
 }

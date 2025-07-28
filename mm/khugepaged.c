@@ -1283,7 +1283,6 @@ static void collect_mm_slot(struct mm_slot *mm_slot)
 static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
 {
 	struct vm_area_struct *vma;
-	struct mm_struct *mm;
 	unsigned long addr;
 	pmd_t *pmd, _pmd;
 
@@ -1297,8 +1296,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
 			continue;
 		if (vma->vm_end < addr + HPAGE_PMD_SIZE)
 			continue;
-		mm = vma->vm_mm;
-		pmd = mm_find_pmd(mm, addr);
+		pmd = mm_find_pmd(vma->vm_mm, addr);
 		if (!pmd)
 			continue;
 		/*
@@ -1314,14 +1312,12 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
 
 				mmu_notifier_invalidate_range_start(mm, addr,
 								    end);
-				vm_write_begin(vma);
 				ptl = pmd_lock(mm, pmd);
 				/* assume page table is clear */
 				_pmd = pmdp_collapse_flush(vma, addr, pmd);
 				spin_unlock(ptl);
 				atomic_long_dec(&mm->nr_ptes);
 				tlb_remove_table_sync_one();
-				vm_write_end(vma);
 				pte_free(mm, pmd_pgtable(_pmd));
 				mmu_notifier_invalidate_range_end(mm, addr,
 								  end);

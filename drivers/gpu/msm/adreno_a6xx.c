@@ -523,6 +523,8 @@ static void a6xx_pwrup_reglist_init(struct adreno_device *adreno_dev)
 
 static void a6xx_init(struct adreno_device *adreno_dev)
 {
+	a6xx_crashdump_init(adreno_dev);
+
 	/*
 	 * If the GMU is not enabled, rewrite the offset for the always on
 	 * counters to point to the CP always on instead of GMU always on
@@ -1755,19 +1757,11 @@ static const char *a6xx_iommu_fault_block(struct kgsl_device *device,
 	else if (!mid || (mid > 3))
 		return fault_block[mid];
 
-	/*
-	 * Smmu driver takes a vote on CX gdsc before calling the kgsl pagefault
-	 * handler. If there is contention for device mutex in this path and the
-	 * dispatcher fault handler is holding this lock, trying to turn off CX
-	 * gdsc will fail during the reset. So to avoid blocking here, try to
-	 * lock device mutex and return if it fails.
-	 */
-	if (!mutex_trylock(&device->mutex))
-		return "UCHE";
+	mutex_lock(&device->mutex);
 
 	if (!kgsl_state_is_awake(device)) {
 		mutex_unlock(&device->mutex);
-		return "UCHE";
+		return "UCHE: unknown";
 	}
 
 	kgsl_regread(device, A6XX_UCHE_CLIENT_PF, &uche_client_id);
@@ -1775,7 +1769,7 @@ static const char *a6xx_iommu_fault_block(struct kgsl_device *device,
 
 	/* Ignore the value if the gpu is in IFPC */
 	if (uche_client_id == 0x5c00bd00)
-		return "UCHE";
+		return "UCHE: unknown";
 
 	uche_client_id &= A6XX_UCHE_CLIENT_PF_CLIENT_ID_MASK;
 	snprintf(str, sizeof(str), "UCHE: %s",
@@ -1874,7 +1868,6 @@ static struct adreno_irq a6xx_irq = {
 	.mask = A6XX_INT_MASK,
 };
 
-#if 0
 static bool adreno_is_qdss_dbg_register(struct kgsl_device *device,
 		unsigned int offsetwords)
 {
@@ -2445,7 +2438,6 @@ static struct adreno_coresight a6xx_coresight_cx = {
 	.read = adreno_cx_dbgc_regread,
 	.write = adreno_cx_dbgc_regwrite,
 };
-#endif
 
 static struct adreno_perfcount_register a6xx_perfcounters_cp[] = {
 	{ KGSL_PERFCOUNTER_NOT_USED, 0, 0, A6XX_RBBM_PERFCTR_CP_0_LO,
@@ -2480,7 +2472,7 @@ static struct adreno_perfcount_register a6xx_perfcounters_cp[] = {
 
 static struct adreno_perfcount_register a6xx_perfcounters_rbbm[] = {
 	{ KGSL_PERFCOUNTER_NOT_USED, 0, 0, A6XX_RBBM_PERFCTR_RBBM_0_LO,
-		A6XX_RBBM_PERFCTR_RBBM_0_HI, 14, A6XX_RBBM_PERFCTR_RBBM_SEL_0 },
+		A6XX_RBBM_PERFCTR_RBBM_0_HI, 15, A6XX_RBBM_PERFCTR_RBBM_SEL_0 },
 	{ KGSL_PERFCOUNTER_NOT_USED, 0, 0, A6XX_RBBM_PERFCTR_RBBM_1_LO,
 		A6XX_RBBM_PERFCTR_RBBM_1_HI, 15, A6XX_RBBM_PERFCTR_RBBM_SEL_1 },
 	{ KGSL_PERFCOUNTER_NOT_USED, 0, 0, A6XX_RBBM_PERFCTR_RBBM_2_LO,
@@ -3284,7 +3276,9 @@ static int a6xx_secure_pt_restore(struct adreno_device *adreno_dev)
 struct adreno_gpudev adreno_a6xx_gpudev = {
 	.reg_offsets = &a6xx_reg_offsets,
 	.start = a6xx_start,
+	.snapshot = a6xx_snapshot,
 	.irq = &a6xx_irq,
+	.irq_trace = trace_kgsl_a5xx_irq_status,
 	.num_prio_levels = KGSL_PRIORITY_MAX_RB_LEVELS,
 	.platform_setup = a6xx_platform_setup,
 	.init = a6xx_init,
@@ -3315,7 +3309,9 @@ struct adreno_gpudev adreno_a6xx_gpudev = {
 	.sptprac_is_on = a6xx_sptprac_is_on,
 	.ccu_invalidate = a6xx_ccu_invalidate,
 	.perfcounter_update = a6xx_perfcounter_update,
+	.coresight = {&a6xx_coresight, &a6xx_coresight_cx},
 	.clk_set_options = a6xx_clk_set_options,
+	.snapshot_preemption = a6xx_snapshot_preemption,
 	.zap_shader_unload = a6xx_zap_shader_unload,
 	.secure_pt_hibernate = a6xx_secure_pt_hibernate,
 	.secure_pt_restore = a6xx_secure_pt_restore,

@@ -838,8 +838,7 @@ static int fuse_check_page(struct page *page)
 	       1 << PG_uptodate |
 	       1 << PG_lru |
 	       1 << PG_active |
-	       1 << PG_reclaim |
-	       LRU_GEN_MASK | LRU_REFS_MASK))) {
+	       1 << PG_reclaim))) {
 		printk(KERN_WARNING "fuse: trying to steal weird page\n");
 		printk(KERN_WARNING "  page=%p index=%li flags=%08lx, count=%i, mapcount=%i, mapping=%p\n", page, page->index, page->flags, page_count(page), page_mapcount(page), page->mapping);
 		return 1;
@@ -2290,9 +2289,13 @@ static long fuse_dev_ioctl(struct file *file, unsigned int cmd,
 	int res;
 	int oldfd;
 	struct fuse_dev *fud = NULL;
+	struct fuse_passthrough_out pto;
 
-	switch (cmd) {
-	case FUSE_DEV_IOC_CLONE:
+	if (_IOC_TYPE(cmd) != FUSE_DEV_IOC_MAGIC)
+		return -EINVAL;
+
+	switch (_IOC_NR(cmd)) {
+	case _IOC_NR(FUSE_DEV_IOC_CLONE):
 		res = -EFAULT;
 		if (!get_user(oldfd, (__u32 __user *)arg)) {
 			struct file *old = fget(oldfd);
@@ -2317,13 +2320,15 @@ static long fuse_dev_ioctl(struct file *file, unsigned int cmd,
 			}
 		}
 		break;
-	case FUSE_DEV_IOC_PASSTHROUGH_OPEN:
+	case _IOC_NR(FUSE_DEV_IOC_PASSTHROUGH_OPEN):
 		res = -EFAULT;
-		if (!get_user(oldfd, (__u32 __user *)arg)) {
+		if (!copy_from_user(&pto,
+				    (struct fuse_passthrough_out __user *)arg,
+				    sizeof(pto))) {
 			res = -EINVAL;
 			fud = fuse_get_dev(file);
 			if (fud)
-				res = fuse_passthrough_open(fud, oldfd);
+				res = fuse_passthrough_open(fud, &pto);
 		}
 		break;
 	default:

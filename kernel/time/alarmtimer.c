@@ -311,8 +311,10 @@ static int alarmtimer_suspend(struct device *dev)
 	if (min == 0)
 		return 0;
 
-	if (ktime_to_ns(min) < NSEC_PER_SEC / 2)
-		__pm_wakeup_event(ws, MSEC_PER_SEC / 2);
+	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
+		__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);
+		return -EBUSY;
+	}
 
 	trace_alarmtimer_suspend(expires, type);
 
@@ -660,19 +662,6 @@ static int alarm_timer_try_to_cancel(struct k_itimer *timr)
 }
 
 /**
- * alarm_timer_wait_running - Posix timer callback to wait for a timer
- * @timr:	Pointer to the posixtimer data struct
- *
- * Called from the core code when timer cancel detected that the callback
- * is running. @timr is unlocked and rcu read lock is held to prevent it
- * from being freed.
- */
-static void alarm_timer_wait_running(struct k_itimer *timr)
-{
-	hrtimer_cancel_wait_running(&timr->it.alarm.alarmtimer.timer);
-}
-
-/**
  * alarm_timer_arm - Posix timer callback to arm a timer
  * @timr:	Pointer to the posixtimer data struct
  * @expires:	The new expiry time
@@ -901,7 +890,6 @@ const struct k_clock alarm_clock = {
 	.timer_forward		= alarm_timer_forward,
 	.timer_remaining	= alarm_timer_remaining,
 	.timer_try_to_cancel	= alarm_timer_try_to_cancel,
-	.timer_wait_running	= alarm_timer_wait_running,
 	.nsleep			= alarm_timer_nsleep,
 };
 #endif /* CONFIG_POSIX_TIMERS */

@@ -285,6 +285,13 @@ int inet6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 {
 	struct sock *sk = sock->sk;
 	const struct proto *prot;
+	struct inet_sock *inet = inet_sk(sk);
+	struct ipv6_pinfo *np = inet6_sk(sk);
+	struct net *net = sock_net(sk);
+	__be32 v4addr = 0;
+	unsigned short snum;
+	bool saved_ipv6only;
+	int addr_type = 0;
 	int err = 0;
 
 	/* IPV6_ADDRFORM can change sk->sk_prot under us. */
@@ -302,8 +309,8 @@ int inet6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	err = BPF_CGROUP_RUN_PROG_INET6_BIND(sk, uaddr);
 	if (err)
 		return err;
-
-	return __inet6_bind(sk, uaddr, addr_len, false, true);
+		
+		return __inet6_bind(sk, uaddr, addr_len, false, true);
 }
 EXPORT_SYMBOL(inet6_bind);
 

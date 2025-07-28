@@ -1644,40 +1644,6 @@ bool mod_delayed_work_on(int cpu, struct workqueue_struct *wq,
 }
 EXPORT_SYMBOL_GPL(mod_delayed_work_on);
 
-static void rcu_work_rcufn(struct rcu_head *rcu)
-{
-	struct rcu_work *rwork = container_of(rcu, struct rcu_work, rcu);
-
-	/* read the comment in __queue_work() */
-	local_irq_disable();
-	__queue_work(WORK_CPU_UNBOUND, rwork->wq, &rwork->work);
-	local_irq_enable();
-}
-
-/**
- * queue_rcu_work - queue work after a RCU grace period
- * @wq: workqueue to use
- * @rwork: work to queue
- *
- * Return: %false if @rwork was already pending, %true otherwise.  Note
- * that a full RCU grace period is guaranteed only after a %true return.
- * While @rwork is guarnateed to be executed after a %false return, the
- * execution may happen before a full RCU grace period has passed.
- */
-bool queue_rcu_work(struct workqueue_struct *wq, struct rcu_work *rwork)
-{
-	struct work_struct *work = &rwork->work;
-
-	if (!test_and_set_bit(WORK_STRUCT_PENDING_BIT, work_data_bits(work))) {
-		rwork->wq = wq;
-		call_rcu(&rwork->rcu, rcu_work_rcufn);
-		return true;
-	}
-
-	return false;
-}
-EXPORT_SYMBOL(queue_rcu_work);
-
 /**
  * worker_enter_idle - enter idle state
  * @worker: worker which is entering idle state
@@ -2210,7 +2176,7 @@ __acquires(&pool->lock)
 	 * stop_machine. At the same time, report a quiescent RCU state so
 	 * the same condition doesn't freeze RCU.
 	 */
-	cond_resched_tasks_rcu_qs();
+	cond_resched_rcu_qs();
 
 	spin_lock_irq(&pool->lock);
 
@@ -3097,26 +3063,6 @@ bool flush_delayed_work(struct delayed_work *dwork)
 }
 EXPORT_SYMBOL(flush_delayed_work);
 
-/**
- * flush_rcu_work - wait for a rwork to finish executing the last queueing
- * @rwork: the rcu work to flush
- *
- * Return:
- * %true if flush_rcu_work() waited for the work to finish execution,
- * %false if it was already idle.
- */
-bool flush_rcu_work(struct rcu_work *rwork)
-{
-	if (test_bit(WORK_STRUCT_PENDING_BIT, work_data_bits(&rwork->work))) {
-		rcu_barrier();
-		flush_work(&rwork->work);
-		return true;
-	} else {
-		return flush_work(&rwork->work);
-	}
-}
-EXPORT_SYMBOL(flush_rcu_work);
-
 static bool __cancel_work(struct work_struct *work, bool is_dwork)
 {
 	unsigned long flags;
@@ -3442,7 +3388,7 @@ static void put_unbound_pool(struct worker_pool *pool)
 	del_timer_sync(&pool->mayday_timer);
 
 	/* sched-RCU protected to allow dereferences from get_work_pool() */
-	call_rcu(&pool->rcu, rcu_free_pool);
+	call_rcu_sched(&pool->rcu, rcu_free_pool);
 }
 
 /**
@@ -3555,14 +3501,14 @@ static void pwq_unbound_release_workfn(struct work_struct *work)
 	put_unbound_pool(pool);
 	mutex_unlock(&wq_pool_mutex);
 
-	call_rcu(&pwq->rcu, rcu_free_pwq);
+	call_rcu_sched(&pwq->rcu, rcu_free_pwq);
 
 	/*
 	 * If we're the last pwq going away, @wq is already dead and no one
 	 * is gonna access it anymore.  Schedule RCU free.
 	 */
 	if (is_last)
-		call_rcu(&wq->rcu, rcu_free_wq);
+		call_rcu_sched(&wq->rcu, rcu_free_wq);
 }
 
 /**
@@ -4269,7 +4215,7 @@ void destroy_workqueue(struct workqueue_struct *wq)
 		 * The base ref is never dropped on per-cpu pwqs.  Directly
 		 * schedule RCU free.
 		 */
-		call_rcu(&wq->rcu, rcu_free_wq);
+		call_rcu_sched(&wq->rcu, rcu_free_wq);
 	} else {
 		/*
 		 * We're the sole accessor of @wq at this point.  Directly

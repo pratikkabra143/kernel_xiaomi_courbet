@@ -39,6 +39,8 @@
 *.symtypes
 *.tar
 *.xz
+*.orig
+*.rej
 Module.symvers
 modules.builtin
 
@@ -55,6 +57,8 @@ modules.builtin
 /System.map
 /Module.markers
 
+#folder
+susfs4ksu/
 #
 # RPM spec file (make rpm-pkg)
 #
@@ -125,9 +129,3 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
-
-#
-#Ignoring Android.bp link file
-#
-Android.bp
-*.zip

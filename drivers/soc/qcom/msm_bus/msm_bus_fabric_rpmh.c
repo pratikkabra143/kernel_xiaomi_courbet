@@ -269,6 +269,7 @@ static int tcs_cmd_gen(struct msm_bus_node_device_type *cur_bcm,
 
 	cmd->addr = cur_bcm->bcmdev->addr;
 	cmd->data = BCM_TCS_CMD(commit, valid, vec_a, vec_b);
+	cmd->complete = commit;
 
 	return ret;
 }
@@ -316,7 +317,6 @@ static int tcs_cmd_list_gen(int *n_active,
 			commit = false;
 			if (list_is_last(&cur_bcm->link,
 						&cur_bcm_clist[i])) {
-				cmdlist_active[k].complete = true;
 				commit = true;
 				idx++;
 			}
@@ -364,11 +364,6 @@ static int tcs_cmd_list_gen(int *n_active,
 						&cur_bcm_clist[i])) {
 				commit = true;
 				idx++;
-			}
-
-			if (cur_rsc->node_info->id == MSM_BUS_RSC_DISP) {
-				cmdlist_wake[last_tcs].complete = false;
-				cmdlist_sleep[last_tcs].complete = false;
 			}
 
 			tcs_cmd_gen(cur_bcm, &cmdlist_wake[k],
@@ -989,7 +984,7 @@ static int msm_bus_dev_init_qos(struct device *dev, void *data)
 		goto exit_init_qos;
 	}
 
-	if (node_dev->ap_owned && node_dev->num_node_qos_clks) {
+	if (node_dev->ap_owned) {
 		struct msm_bus_node_device_type *bus_node_info;
 
 		bus_node_info =

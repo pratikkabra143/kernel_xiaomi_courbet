@@ -30,8 +30,6 @@
 #define MSM_BUS_RSC_DISP		8001
 #define BCM_TCS_CMD_ACV_APPS		0x8
 
-#define DEBUG_REC_TRANSACTION 0
-
 struct bus_search_type {
 	struct list_head link;
 	struct list_head node_list;
@@ -421,9 +419,6 @@ static int getpath(struct device *src_dev, int dest, const char *cl_name)
 	src = src_node->node_info->id;
 	list_add_tail(&src_node->link, &traverse_list);
 
-	/* Setup list of black-listed nodes */
-	setup_bl_list(src_node, &black_list);
-
 	while ((!found && !list_empty(&traverse_list))) {
 		struct msm_bus_node_device_type *bus_node = NULL;
 		unsigned int i;
@@ -437,6 +432,9 @@ static int getpath(struct device *src_dev, int dest, const char *cl_name)
 
 		/* Setup the new edge list */
 		list_for_each_entry(bus_node, &traverse_list, link) {
+			/* Setup list of black-listed nodes */
+			setup_bl_list(bus_node, &black_list);
+
 			for (i = 0; i < bus_node->node_info->num_connections;
 									i++) {
 				bool skip = false;
@@ -1811,8 +1809,7 @@ static int update_bw_adhoc(struct msm_bus_client_handle *cl, u64 ab, u64 ib)
 	if (!strcmp(test_cl, cl->name))
 		log_transaction = true;
 
-	if (DEBUG_REC_TRANSACTION)
-		msm_bus_dbg_rec_transaction(cl, ab, ib);
+	msm_bus_dbg_rec_transaction(cl, ab, ib);
 
 	if (cl->active_only) {
 		if ((cl->cur_act_ib == ib) && (cl->cur_act_ab == ab)) {
@@ -1880,9 +1877,7 @@ static int update_bw_context(struct msm_bus_client_handle *cl, u64 act_ab,
 
 	if (!dual_ab && !dual_ib)
 		cl->active_only = true;
-	if (DEBUG_REC_TRANSACTION)
-		msm_bus_dbg_rec_transaction(cl, cl->cur_act_ab,
-					    cl->cur_dual_ib);
+	msm_bus_dbg_rec_transaction(cl, cl->cur_act_ab, cl->cur_dual_ib);
 	ret = update_path(cl->mas_dev, cl->slv, act_ib, act_ab, dual_ib,
 				dual_ab, cl->cur_act_ab, cl->cur_act_ab,
 				cl->first_hop, cl->active_only);

@@ -17,7 +17,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 export DTC_FLAGS := -@
 endif
 
-LDFLAGS_vmlinux	:= --no-undefined -X --pic-veneer
+LDFLAGS_vmlinux	:=-p --no-undefined -X --pic-veneer
 ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
 LDFLAGS_vmlinux	+= --be8
 LDFLAGS_MODULE	+= --be8
@@ -55,11 +55,13 @@ endif
 ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
 KBUILD_CPPFLAGS	+= $(call cc-option,-mbig-endian)
 CHECKFLAGS	+= -D__ARMEB__
-LDFLAGS		+= -EB
+AS		+= -EB
+LD		+= -EB
 else
 KBUILD_CPPFLAGS	+= $(call cc-option,-mlittle-endian)
 CHECKFLAGS	+= -D__ARMEL__
-LDFLAGS		+= -EL
+AS		+= -EL
+LD		+= -EL
 endif
 
 #

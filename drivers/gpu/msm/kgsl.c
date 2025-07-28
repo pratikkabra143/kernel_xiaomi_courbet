@@ -406,10 +406,6 @@ kgsl_mem_entry_destroy(struct kref *kref)
 						    struct kgsl_mem_entry,
 						    refcount);
 	unsigned int memtype;
-	struct kgsl_device *device = NULL;
-
-	if (entry->memdesc.pagetable != NULL)
-		device = KGSL_MMU_DEVICE(entry->memdesc.pagetable->mmu);
 
 	if (entry == NULL)
 		return;
@@ -1127,13 +1123,10 @@ static void kgsl_process_private_close(struct kgsl_device_private *dev_priv,
 	 * directories and garbage collect any outstanding resources
 	 */
 
-	process_release_memory(private);
+	kgsl_process_uninit_sysfs(private);
 
 	/* Release all syncsource objects from process private */
 	kgsl_syncsource_process_release_syncsources(private);
-
-	debugfs_remove_recursive(private->debug_root);
-	kgsl_process_uninit_sysfs(private);
 
 	/* When using global pagetables, do not detach global pagetable */
 	if (private->pagetable->name != KGSL_MMU_GLOBAL_PT)
@@ -1144,7 +1137,15 @@ static void kgsl_process_private_close(struct kgsl_device_private *dev_priv,
 	list_del(&private->list);
 	spin_unlock(&kgsl_driver.proclist_lock);
 
+	/*
+	 * Unlock the mutex before releasing the memory and the debugfs
+	 * nodes - this prevents deadlocks with the IOMMU and debugfs
+	 * locks.
+	 */
 	mutex_unlock(&kgsl_driver.process_mutex);
+
+	process_release_memory(private);
+	debugfs_remove_recursive(private->debug_root);
 
 	kgsl_process_private_put(private);
 }
@@ -4852,15 +4853,6 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 		atomic64_add(entry->memdesc.size,
 				&entry->priv->gpumem_mapped);
 
-	/*
-	 * kgsl gets the entry id or the gpu address through vm_pgoff.
-	 * It is used during mmap and never needed again. But this vm_pgoff
-	 * has different meaning at other parts of kernel. Not setting to
-	 * zero will let way for wrong assumption when tried to unmap a page
-	 * from this vma.
-	 */
-	vma->vm_pgoff = 0;
-
 	trace_kgsl_mem_mmap(entry, vma->vm_start);
 	return 0;
 }
@@ -5054,7 +5046,7 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 	}
 
 	status = devm_request_irq(device->dev, device->pwrctrl.interrupt_num,
-				  kgsl_irq_handler, IRQF_TRIGGER_HIGH,
+				  kgsl_irq_handler, IRQF_TRIGGER_HIGH | IRQF_PERF_SECOND_AFFINE,
 				  device->name, device);
 	if (status) {
 		KGSL_DRV_ERR(device, "request_irq(%d) failed: %d\n",

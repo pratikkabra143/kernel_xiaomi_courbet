@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Install necessary dependencies
+sudo apt-get update
+sudo apt-get install -y clang llvm lld build-essential bc libncurses-dev bison flex libssl-dev libelf-dev
+
+# Export build environment variables
+export KBUILD_BUILD_USER=insanebuilds
+export KBUILD_BUILD_HOST=insane
+echo $KBUILD_BUILD_USER
+echo $KBUILD_BUILD_HOST
+export LOCALVERSION="-pratikkabra143"
+echo -e "done?"
+sleep 2s
+
+# Run kernel build steps
+make CC=clang ARCH=arm64 O=out V=1 EXTRAVERSION="" courbet_defconfig
+make CC=clang LLVM=1 ARCH=arm64 O=out -j16 \
+        HEADER_ARCH=arm64 \
+        SUBARCH=arm64 \
+        CXX=c++ \
+        AR=llvm-ar \
+        NM=llvm-nm \
+        OBJDUMP=llvm-objdump \
+        STRIP=llvm-strip \
+        READELF=llvm-readelf \
+        HOSTCXX=clang++ \
+        HOSTAR=llvm-ar \
+        LLVM_IAS=1 \
+        CROSS_COMPILE=aarch64-linux-gnu- \
+        CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+        CLANG_TRIPLE=aarch64-linux-gnu-

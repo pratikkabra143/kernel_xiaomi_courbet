@@ -4856,7 +4856,6 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 	int i;
 	struct dsi_display_ctrl *ctrl;
 	struct dsi_display_mode_priv_info *priv_info;
-	bool commit_phy_timing = false;
 
 	priv_info = mode->priv_info;
 	if (!priv_info) {
@@ -4908,20 +4907,9 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 		if (priv_info->phy_timing_len) {
 			display_for_each_ctrl(i, display) {
 				ctrl = &display->ctrl[i];
-				if ((mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) &&
-					(display->panel->panel_mode == DSI_OP_CMD_MODE)) {
-					rc = dsi_phy_set_timing_params_commit(ctrl->phy,
+				rc = dsi_phy_set_timing_params(ctrl->phy,
 						priv_info->phy_timing_val,
 						priv_info->phy_timing_len);
-					pr_info("[%s] Force commit PHY timing params "
-						"for seamless DMS usecase\n",
-						display->name);
-				} else {
-					rc = dsi_phy_set_timing_params(ctrl->phy,
-						priv_info->phy_timing_val,
-						priv_info->phy_timing_len,
-						commit_phy_timing);
-				}
 				if (rc)
 					pr_err("Fail to add timing params\n");
 			}
@@ -4964,18 +4952,16 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 	}
 
 	if ((mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) &&
-			(display->panel->panel_mode == DSI_OP_CMD_MODE)) {
-		commit_phy_timing = true;
+			(display->panel->panel_mode == DSI_OP_CMD_MODE))
 		atomic_set(&display->clkrate_change_pending, 1);
-	}
+
 
 	if (priv_info->phy_timing_len) {
 		display_for_each_ctrl(i, display) {
 			ctrl = &display->ctrl[i];
 			 rc = dsi_phy_set_timing_params(ctrl->phy,
 				priv_info->phy_timing_val,
-				priv_info->phy_timing_len,
-				commit_phy_timing);
+				priv_info->phy_timing_len);
 			if (rc)
 				pr_err("failed to add DSI PHY timing params");
 		}
@@ -5200,7 +5186,8 @@ static int dsi_display_link_clk_force_update_ctrl(void *handle)
 	return rc;
 }
 
-int dsi_display_clk_ctrl(void *handle, u32 clk_type, u32 clk_state)
+int dsi_display_clk_ctrl(void *handle,
+	enum dsi_clk_type clk_type, enum dsi_clk_state clk_state)
 {
 	int rc = 0;
 

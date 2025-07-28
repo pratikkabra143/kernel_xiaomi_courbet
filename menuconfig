@@ -1,0 +1,3 @@
+make CC=clang ARCH=arm64 O=out courbet_defconfig menuconfig
+
+mv out/.config courbet_defconfig && mv courbet_defconfig arch/arm64/configs/

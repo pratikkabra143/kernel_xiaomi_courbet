@@ -58,7 +58,8 @@ walt_proc_update_handler(struct ctl_table *table, int write,
 #if defined(CONFIG_PREEMPT_TRACER) || defined(CONFIG_DEBUG_PREEMPT)
 extern unsigned int sysctl_preemptoff_tracing_threshold_ns;
 #endif
-#if defined(CONFIG_PREEMPTIRQ_EVENTS) && defined(CONFIG_IRQSOFF_TRACER)
+#if defined(CONFIG_PREEMPTIRQ_EVENTS) && defined(CONFIG_IRQSOFF_TRACER) && \
+		!defined(CONFIG_PROVE_LOCKING)
 extern unsigned int sysctl_irqsoff_tracing_threshold_ns;
 #endif
 
@@ -97,13 +98,6 @@ extern int sched_boost_handler(struct ctl_table *table, int write,
 extern unsigned int sysctl_sched_rt_period;
 extern int sysctl_sched_rt_runtime;
 
-#ifdef CONFIG_UCLAMP_TASK
-extern unsigned int sysctl_sched_uclamp_util_min;
-extern unsigned int sysctl_sched_uclamp_util_max;
-extern unsigned int sysctl_sched_uclamp_util_min_rt_default;
-extern unsigned int sysctl_sched_uclamp_max_filter_divider;
-#endif
-
 #ifdef CONFIG_CFS_BANDWIDTH
 extern unsigned int sysctl_sched_cfs_bandwidth_slice;
 #endif
@@ -122,12 +116,6 @@ extern int sched_rr_handler(struct ctl_table *table, int write,
 extern int sched_rt_handler(struct ctl_table *table, int write,
 		void __user *buffer, size_t *lenp,
 		loff_t *ppos);
-
-#ifdef CONFIG_UCLAMP_TASK
-extern int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
-				       void __user *buffer, size_t *lenp,
-				       loff_t *ppos);
-#endif
 
 extern int sched_updown_migrate_handler(struct ctl_table *table,
 					int write, void __user *buffer,
@@ -150,9 +138,6 @@ extern int sched_little_cluster_coloc_fmin_khz_handler(struct ctl_table *table,
 #define LIB_PATH_LENGTH 512
 extern char sched_lib_name[LIB_PATH_LENGTH];
 extern unsigned int sched_lib_mask_force;
-extern int sysctl_sched_lib_name_handler(struct ctl_table *table, int write,
-					 void __user *buffer, size_t *lenp,
-					 loff_t *ppos);
 extern bool is_sched_lib_based_app(pid_t pid);
 
 #endif /* _LINUX_SCHED_SYSCTL_H */
