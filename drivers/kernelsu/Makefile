@@ -25,9 +25,9 @@ REPO_NAME := SukiSU-Ultra
 REPO_BRANCH := main
 KSU_VERSION_API := 3.1.8
 
-KSU_LOCAL_VERSION := 2572
+KSU_LOCAL_VERSION := 2585
 KSU_VERSION := $(shell expr 10000 + $(KSU_LOCAL_VERSION) + 700)
-KSU_VERSION_FULL := v3.1.8-pratikkabra143@susfs-main[9e29b2c3]
+KSU_VERSION_FULL := v3.1.8-pratikkabra143@susfs-main[ffdaf13f]
 
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 ccflags-y += -DKSU_VERSION_FULL=\"$(KSU_VERSION_FULL)\"
