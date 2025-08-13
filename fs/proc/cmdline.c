@@ -83,11 +83,7 @@ static int cmdline_proc_show(struct seq_file *m, void *v)
 		return 0;
 	}
 #endif
-#ifdef ALTER_CMDLINE
-	seq_printf(m, "%s\n", proc_command_line);
-#else
 	seq_printf(m, "%s\n", saved_command_line);
-#endif
 	return 0;
 }
 
@@ -105,10 +101,6 @@ static const struct file_operations cmdline_proc_fops = {
 
 static int __init proc_cmdline_init(void)
 {
-#ifdef ALTER_CMDLINE
-	proc_command_line_init();
-#endif
-
 	proc_create("cmdline", 0, NULL, &cmdline_proc_fops);
 	return 0;
 }
