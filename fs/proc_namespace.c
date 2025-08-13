@@ -307,6 +307,7 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 	p->root = root;
 	p->show = show;
 	p->cached_event = ~0ULL;
+
 	return 0;
 
  err_put_path:
@@ -321,7 +322,6 @@ static int mounts_release(struct inode *inode, struct file *file)
 {
 	struct seq_file *m = file->private_data;
 	struct proc_mounts *p = m->private;
-
 	path_put(&p->root);
 	put_mnt_ns(p->ns);
 	return seq_release_private(inode, file);

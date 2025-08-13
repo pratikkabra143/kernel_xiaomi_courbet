@@ -365,6 +365,11 @@ extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int
  * switching the fsuid/fsgid around to the real ones.
  */
 
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_WITH_KPROBES)
+extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode,
+			                    int *flags);
+#endif
+
 SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 {
 	const struct cred *old_cred;
@@ -374,7 +379,8 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	struct vfsmount *mnt;
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
-#ifdef CONFIG_KSU
+
+#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_WITH_KPROBES)
 	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
 #endif
 
