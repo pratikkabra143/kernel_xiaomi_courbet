@@ -1951,6 +1951,8 @@ static int can_umount(const struct path *path, int flags)
 		return -EINVAL;
 	if (!may_mount())
 		return -EPERM;
+	if (path->dentry != path->mnt->mnt_root)
+		return -EINVAL;
 	if (!path_mounted(path))
 		return -EINVAL;
 	if (!check_mnt(mnt))
