@@ -307,7 +307,6 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 	p->root = root;
 	p->show = show;
 	p->cached_event = ~0ULL;
-
 	return 0;
 
  err_put_path:

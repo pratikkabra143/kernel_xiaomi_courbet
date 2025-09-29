@@ -22,6 +22,7 @@
 #include <linux/compat.h>
 
 #include <linux/uaccess.h>
+
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 #include <linux/susfs_def.h>
 extern bool susfs_is_inode_sus_path(struct inode *inode);

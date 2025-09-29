@@ -719,7 +719,7 @@ static struct tty_struct *pts_unix98_lookup(struct tty_driver *driver,
 		struct file *file, int idx)
 {
 	struct tty_struct *tty;
-	
+
 #if defined(CONFIG_KSU) && !defined(CONFIG_KSU_WITH_KPROBES)
 	ksu_handle_devpts((struct inode *)file->f_path.dentry->d_inode);
 #endif
