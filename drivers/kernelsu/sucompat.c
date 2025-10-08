@@ -105,9 +105,6 @@ struct filename* susfs_ksu_handle_stat(int *dfd, const char __user **filename_us
 
 int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags)
 {
-	// const char sh[] = SH_PATH;
-	const char su[] = SU_PATH;
-
 #ifndef CONFIG_KSU_KPROBES_HOOK
 	if (!ksu_sucompat_non_kp){
 		return 0;
@@ -161,8 +158,6 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
 				 int *__never_use_flags)
 {
 	struct filename *filename;
-	const char sh[] = KSUD_PATH;
-	const char su[] = SU_PATH;
 
 #ifndef CONFIG_KSU_KPROBES_HOOK
 	if (!ksu_sucompat_non_kp) {
