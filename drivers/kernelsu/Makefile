@@ -16,8 +16,12 @@ ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-
 
 obj-$(CONFIG_KSU) += kernelsu.o
 
+KSU_VERSION_TAG := v1.1.1
+$(info -- KernelSU-Next tag: $(KSU_VERSION_TAG))
+ccflags-y += -DKSU_VERSION_TAG=\"$(KSU_VERSION_TAG)\"
+
 # .git is a text file while the module is imported by 'git submodule add'.
-KSU_GIT_VERSION := 2655
+KSU_GIT_VERSION := 2679
 # ksu_version: major * 10000 + git version + 200 for historical reasons
 $(eval KSU_VERSION=$(shell expr 10000 + $(KSU_GIT_VERSION) + 200))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
@@ -40,6 +44,10 @@ endif
 
 ifeq ($(shell grep "ssize_t kernel_write" $(srctree)/fs/read_write.c | grep -q "const void" ; echo $$?),0)
 ccflags-y += -DKSU_KERNEL_WRITE
+endif
+
+ifeq ($(shell grep -A1 "^int vfs_getattr" $(srctree)/fs/stat.c | grep -q "query_flags"; echo $$?),0)
+ccflags-y += -DKSU_HAS_NEW_VFS_GETATTR
 endif
 
 ifndef KSU_NEXT_MANAGER_SIZE
@@ -130,6 +138,12 @@ $(shell sed -i '/^extern void __init mnt_init/a int path_umount(struct path *pat
 $(info -- KSU_NEXT: adding 'int path_umount(struct path *path, int flags);' to $(srctree)/fs/internal.h)
 endif
 
+ifneq ($(shell grep -q "atomic_t filter_count;" $(srctree)/include/linux/seccomp.h; echo $$?),0)
+$(info -- KSU_NEXT: patching struct seccomp for filter_count)
+$(shell sed -i '/int mode;/a\	atomic_t filter_count;' $(srctree)/include/linux/seccomp.h)
+$(shell sed -i '/#include <linux\/thread_info.h>/a\#include <linux/atomic.h>' $(srctree)/include/linux/seccomp.h)
+endif
+
 ccflags-y += -Wno-implicit-function-declaration -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
 
@@ -207,7 +221,7 @@ $(eval SUSFS_VERSION=$(shell cat $(srctree)/include/linux/susfs.h | grep -E '^#d
 $(info )
 $(info -- SUSFS_VERSION: $(SUSFS_VERSION))
 else
-$(info -- You have not integrated susfs in your kernel yet.)
+$(info -- You have not integrate susfs in your kernel.)
 $(info -- Read: https://gitlab.com/simonpunk/susfs4ksu)
 endif
 # Keep a new line here!! Because someone may append config
